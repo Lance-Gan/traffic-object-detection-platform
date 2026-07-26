@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# Secrets
+.env
+
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Generated files
+backend/uploads/*
+backend/results/*
+!backend/uploads/.gitkeep
+!backend/results/.gitkeep
+
+# Models and exported weights
+*.pt
+*.onnx
+*.engine
+*.mlpackage
+
+# Videos
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# IDE
+.vscode/settings.json
