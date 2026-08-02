@@ -21,17 +21,9 @@ def test_rejects_image_above_limit(
 
     upload = UploadFile(
         filename="large.jpg",
-        file=BytesIO(
-            b"12345"
-        ),
-        headers={
-            "content-type": (
-                "image/jpeg"
-            )
-        },
+        file=BytesIO(b"12345"),
+        headers={"content-type": ("image/jpeg")},
     )
 
-    with pytest.raises(
-        ImageTooLargeError
-    ):
+    with pytest.raises(ImageTooLargeError):
         service.save_image(upload)

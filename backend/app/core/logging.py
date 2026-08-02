@@ -2,53 +2,38 @@ import json
 import logging
 from contextvars import ContextVar
 from datetime import (
+    UTC,
     datetime,
-    timezone,
 )
 from logging.config import dictConfig
 from typing import Any
 
-
-request_id_context: ContextVar[str] = (
-    ContextVar(
-        "request_id",
-        default="-",
-    )
+request_id_context: ContextVar[str] = ContextVar(
+    "request_id",
+    default="-",
 )
 
 
-class RequestIdFilter(
-    logging.Filter
-):
+class RequestIdFilter(logging.Filter):
     def filter(
         self,
         record: logging.LogRecord,
     ) -> bool:
-        record.request_id = (
-            request_id_context.get()
-        )
+        record.request_id = request_id_context.get()
 
         return True
 
 
-class JsonFormatter(
-    logging.Formatter
-):
+class JsonFormatter(logging.Formatter):
     def format(
         self,
         record: logging.LogRecord,
     ) -> str:
         payload: dict[str, Any] = {
-            "timestamp": (
-                datetime.now(
-                    timezone.utc
-                ).isoformat()
-            ),
+            "timestamp": (datetime.now(UTC).isoformat()),
             "level": record.levelname,
             "logger": record.name,
-            "message": (
-                record.getMessage()
-            ),
+            "message": (record.getMessage()),
             "request_id": getattr(
                 record,
                 "request_id",
@@ -69,16 +54,10 @@ class JsonFormatter(
             )
 
             if field_value is not None:
-                payload[field_name] = (
-                    field_value
-                )
+                payload[field_name] = field_value
 
         if record.exc_info:
-            payload["exception"] = (
-                self.formatException(
-                    record.exc_info
-                )
-            )
+            payload["exception"] = self.formatException(record.exc_info)
 
         return json.dumps(
             payload,
@@ -89,16 +68,12 @@ class JsonFormatter(
 def configure_logging(
     log_level: str,
 ) -> None:
-    normalized_level = (
-        log_level.upper()
-    )
+    normalized_level = log_level.upper()
 
     dictConfig(
         {
             "version": 1,
-            "disable_existing_loggers": (
-                False
-            ),
+            "disable_existing_loggers": (False),
             "filters": {
                 "request_id": {
                     "()": RequestIdFilter,
@@ -111,41 +86,25 @@ def configure_logging(
             },
             "handlers": {
                 "console": {
-                    "class": (
-                        "logging.StreamHandler"
-                    ),
+                    "class": ("logging.StreamHandler"),
                     "formatter": "json",
-                    "filters": [
-                        "request_id"
-                    ],
-                    "stream": (
-                        "ext://sys.stdout"
-                    ),
+                    "filters": ["request_id"],
+                    "stream": ("ext://sys.stdout"),
                 }
             },
             "root": {
-                "handlers": [
-                    "console"
-                ],
+                "handlers": ["console"],
                 "level": normalized_level,
             },
             "loggers": {
                 "uvicorn": {
-                    "handlers": [
-                        "console"
-                    ],
-                    "level": (
-                        normalized_level
-                    ),
+                    "handlers": ["console"],
+                    "level": (normalized_level),
                     "propagate": False,
                 },
                 "uvicorn.error": {
-                    "handlers": [
-                        "console"
-                    ],
-                    "level": (
-                        normalized_level
-                    ),
+                    "handlers": ["console"],
+                    "level": (normalized_level),
                     "propagate": False,
                 },
                 "uvicorn.access": {

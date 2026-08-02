@@ -67,9 +67,7 @@ class Settings(BaseSettings):
         "testserver",
     ]
 
-    max_request_body_bytes: int = (
-        270 * 1024 * 1024
-    )
+    max_request_body_bytes: int = 270 * 1024 * 1024
 
     video_upload_dir: Path = BACKEND_ROOT / "uploads" / "videos"
 

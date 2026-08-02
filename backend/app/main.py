@@ -39,17 +39,13 @@ def create_application() -> FastAPI:
 
     application = FastAPI(
         title=settings.app_name,
-        description=(
-            "API for traffic object detection and analytics"
-        ),
+        description=("API for traffic object detection and analytics"),
         version=settings.app_version,
     )
 
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=(
-            settings.cors_origins
-        ),
+        allow_origins=(settings.cors_origins),
         allow_credentials=False,
         allow_methods=[
             "GET",
@@ -61,16 +57,12 @@ def create_application() -> FastAPI:
 
     application.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=(
-            settings.allowed_hosts
-        ),
+        allowed_hosts=(settings.allowed_hosts),
     )
 
     application.add_middleware(
         RequestSizeLimitMiddleware,
-        max_body_bytes=(
-            settings.max_request_body_bytes
-        ),
+        max_body_bytes=(settings.max_request_body_bytes),
     )
 
     application.add_middleware(

@@ -30,38 +30,26 @@ class FakeObjectDetector:
             exist_ok=True,
         )
 
-        with Image.open(
-            input_path
-        ) as image:
-            image.convert(
-                "RGB"
-            ).save(
+        with Image.open(input_path) as image:
+            image.convert("RGB").save(
                 output_path,
                 format="JPEG",
             )
 
-        detected_object = (
-            DetectedObjectData(
-                class_id=2,
-                class_name="car",
-                confidence=Decimal(
-                    "0.90000"
-                ),
-                x1=5.0,
-                y1=6.0,
-                x2=40.0,
-                y2=35.0,
-            )
+        detected_object = DetectedObjectData(
+            class_id=2,
+            class_name="car",
+            confidence=Decimal("0.90000"),
+            x1=5.0,
+            y1=6.0,
+            x2=40.0,
+            y2=35.0,
         )
 
         return DetectionRunResult(
-            result_filename=(
-                output_path.name
-            ),
+            result_filename=(output_path.name),
             duration_ms=12,
-            objects=(
-                detected_object,
-            ),
+            objects=(detected_object,),
         )
 
 
@@ -82,17 +70,15 @@ class FakeCameraTracker:
     ) -> CameraFrameResultData:
         del frame_bytes
 
-        detected_object = (
-            CameraObjectData(
-                track_id=7,
-                class_id=2,
-                class_name="car",
-                confidence=0.91,
-                x1=10.0,
-                y1=12.0,
-                x2=100.0,
-                y2=90.0,
-            )
+        detected_object = CameraObjectData(
+            track_id=7,
+            class_id=2,
+            class_name="car",
+            confidence=0.91,
+            x1=10.0,
+            y1=12.0,
+            x2=100.0,
+            y2=90.0,
         )
 
         return CameraFrameResultData(
@@ -100,7 +86,5 @@ class FakeCameraTracker:
             frame_width=320,
             frame_height=240,
             inference_ms=20,
-            objects=(
-                detected_object,
-            ),
+            objects=(detected_object,),
         )

@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 TEST_DATA_ROOT = BACKEND_ROOT / ".test-data"
 
@@ -38,79 +37,50 @@ os.environ.update(
         "DB_NAME": "traffic_detection_test",
         "DB_USER": "traffic_test",
         "DB_PASSWORD": "traffic_test_password",
-        "CELERY_BROKER_URL": (
-            "redis://127.0.0.1:6380/0"
-        ),
-        "CELERY_RESULT_BACKEND": (
-            "redis://127.0.0.1:6380/1"
-        ),
+        "CELERY_BROKER_URL": ("redis://127.0.0.1:6380/0"),
+        "CELERY_RESULT_BACKEND": ("redis://127.0.0.1:6380/1"),
         "MODEL_NAME": "fake-yolo.pt",
         "INFERENCE_DEVICE": "cpu",
         "UPLOAD_DIR": str(UPLOAD_DIR),
         "RESULT_DIR": str(RESULT_DIR),
-        "VIDEO_UPLOAD_DIR": str(
-            VIDEO_UPLOAD_DIR
-        ),
-        "VIDEO_RESULT_DIR": str(
-            VIDEO_RESULT_DIR
-        ),
-        "CORS_ORIGINS": (
-            '["http://127.0.0.1:5173",'
-            '"http://localhost:5173"]'
-        ),
-        "ALLOWED_HOSTS": (
-            '["127.0.0.1",'
-            '"localhost",'
-            '"testserver"]'
-        ),
+        "VIDEO_UPLOAD_DIR": str(VIDEO_UPLOAD_DIR),
+        "VIDEO_RESULT_DIR": str(VIDEO_RESULT_DIR),
+        "CORS_ORIGINS": ('["http://127.0.0.1:5173","http://localhost:5173"]'),
+        "ALLOWED_HOSTS": ('["127.0.0.1","localhost","testserver"]'),
     }
 )
 
 
-from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import delete  # noqa: E402
 
-from app.db.session import SessionLocal
-from app.main import create_application
-from app.models import (
+from app.db.session import SessionLocal  # noqa: E402
+from app.main import create_application  # noqa: E402
+from app.models import (  # noqa: E402
     DetectionJob,
     DetectionObject,
 )
 
 
 @pytest.fixture(scope="session")
-def client() -> Generator[
-    TestClient,
-    None,
-    None,
-]:
+def client() -> Generator[TestClient]:
     application = create_application()
 
-    with TestClient(
-        application
-    ) as test_client:
+    with TestClient(application) as test_client:
         yield test_client
 
 
 def clean_database() -> None:
     with SessionLocal() as session:
-        session.execute(
-            delete(DetectionObject)
-        )
+        session.execute(delete(DetectionObject))
 
-        session.execute(
-            delete(DetectionJob)
-        )
+        session.execute(delete(DetectionJob))
 
         session.commit()
 
 
 @pytest.fixture(autouse=True)
-def reset_test_state() -> Generator[
-    None,
-    None,
-    None,
-]:
+def reset_test_state() -> Generator[None]:
     clean_database()
 
     for directory in (
