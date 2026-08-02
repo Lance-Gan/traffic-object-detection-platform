@@ -32,16 +32,12 @@ jobs:
       SQL_ECHO: "false"
 
       DB_HOST: 127.0.0.1
-      DB_PORT: "3306"
       DB_NAME: traffic_detection_test
       DB_USER: traffic_test
       DB_PASSWORD: traffic_test_password
 
       MODEL_NAME: fake-yolo.pt
       INFERENCE_DEVICE: cpu
-
-      CELERY_BROKER_URL: redis://127.0.0.1:6379/0
-      CELERY_RESULT_BACKEND: redis://127.0.0.1:6379/1
 
       UPLOAD_DIR: /tmp/traffic-test/uploads
       RESULT_DIR: /tmp/traffic-test/results
@@ -66,12 +62,11 @@ jobs:
           MYSQL_PASSWORD: traffic_test_password
 
         ports:
-          - 3306:3306
+          - 3306/tcp
 
         options: >-
           --health-cmd
           "mysqladmin ping -h localhost -uroot -ptest_root_password --silent"
-
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -80,12 +75,11 @@ jobs:
         image: redis:8.4-alpine
 
         ports:
-          - 6379:6379
+          - 6379/tcp
 
         options: >-
           --health-cmd
           "redis-cli ping"
-
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -93,6 +87,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Configure service ports
+        shell: bash
+        run: |
+          echo "DB_PORT=${{ job.services.mysql.ports['3306'] }}" >> "$GITHUB_ENV"
+          echo "CELERY_BROKER_URL=redis://127.0.0.1:${{ job.services.redis.ports['6379'] }}/0" >> "$GITHUB_ENV"
+          echo "CELERY_RESULT_BACKEND=redis://127.0.0.1:${{ job.services.redis.ports['6379'] }}/1" >> "$GITHUB_ENV"
+
+      - name: Display service configuration
+        shell: bash
+        run: |
+          echo "MySQL host: ${DB_HOST}"
+          echo "MySQL port: ${DB_PORT}"
+          echo "Redis broker configured"
+          echo "Redis result backend configured"
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -146,7 +155,7 @@ jobs:
             --cov-report=xml
 
       - name: Audit Python dependencies
-        run: pip-audit
+        run: python -m pip_audit
 
   frontend:
     name: Frontend
@@ -191,8 +200,7 @@ jobs:
         run: npm run format:check
 
       - name: Audit npm dependencies
-        run: |
-          npm audit --audit-level=high
+        run: npm audit --audit-level=high
 
   browser-tests:
     name: Browser Tests
