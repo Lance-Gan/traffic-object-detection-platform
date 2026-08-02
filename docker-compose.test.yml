@@ -1,0 +1,58 @@
+name: traffic-detection-test
+
+services:
+  mysql-test:
+    image: mysql:8.4
+    container_name: traffic-detection-mysql-test
+    restart: "no"
+
+    environment:
+      MYSQL_ROOT_PASSWORD: test_root_password
+      MYSQL_DATABASE: traffic_detection_test
+      MYSQL_USER: traffic_test
+      MYSQL_PASSWORD: traffic_test_password
+      TZ: UTC
+
+    ports:
+      - "127.0.0.1:3307:3306"
+
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+
+    tmpfs:
+      - /var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -ptest_root_password --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  redis-test:
+    image: redis:8.4-alpine
+    container_name: traffic-detection-redis-test
+    restart: "no"
+
+    ports:
+      - "127.0.0.1:6380:6379"
+
+    tmpfs:
+      - /data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20

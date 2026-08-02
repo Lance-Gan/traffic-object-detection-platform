@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Clock3, ScanSearch } from "lucide-react";
+import { Activity, BarChart3, Camera, Clock3, ScanSearch, Film } from "lucide-react";
 import { NavLink, Outlet } from "react-router";
 
 import { cn } from "../../lib/cn";
@@ -8,6 +8,16 @@ const navigationItems = [
     label: "Image Detection",
     to: "/detect",
     icon: ScanSearch,
+  },
+  {
+    label: "Video Detection",
+    to: "/video",
+    icon: Film,
+  },
+  {
+    label: "Live Camera",
+    to: "/camera",
+    icon: Camera,
   },
   {
     label: "History",
@@ -61,6 +71,7 @@ export function AppShell() {
                 }
               >
                 <Icon aria-hidden="true" className="size-5" />
+
                 {label}
               </NavLink>
             ))}

@@ -65,10 +65,7 @@ function getAxisLabelInterval(pointCount: number): number {
     return 0;
   }
 
-  return Math.max(
-    0,
-    Math.ceil(pointCount / MAX_VISIBLE_AXIS_LABELS) - 1,
-  );
+  return Math.max(0, Math.ceil(pointCount / MAX_VISIBLE_AXIS_LABELS) - 1);
 }
 
 function getInitialZoomStart(pointCount: number): number {
@@ -76,10 +73,7 @@ function getInitialZoomStart(pointCount: number): number {
     return 0;
   }
 
-  return Math.max(
-    0,
-    ((pointCount - DEFAULT_VISIBLE_DAYS) / pointCount) * 100,
-  );
+  return Math.max(0, ((pointCount - DEFAULT_VISIBLE_DAYS) / pointCount) * 100);
 }
 
 function formatAxisDate(value: string): string {
@@ -94,9 +88,7 @@ function formatAxisDate(value: string): string {
   return `${day}/${month}`;
 }
 
-export function DailyTrendChart({
-  statistics,
-}: AnalyticsChartsProps) {
+export function DailyTrendChart({ statistics }: AnalyticsChartsProps) {
   const option = useMemo<EChartsCoreOption>(() => {
     const pointCount = statistics.daily.length;
     const hasLongRange = pointCount > 14;
@@ -106,8 +98,7 @@ export function DailyTrendChart({
     return {
       aria: {
         show: true,
-        description:
-          "Line chart showing daily detection jobs and detected objects.",
+        description: "Line chart showing daily detection jobs and detected objects.",
       },
 
       animationDuration: 350,
@@ -138,18 +129,14 @@ export function DailyTrendChart({
         type: "category",
         boundaryGap: false,
 
-        data: statistics.daily.map(
-          (item) => item.date,
-        ),
+        data: statistics.daily.map((item) => item.date),
 
         axisTick: {
           alignWithLabel: true,
         },
 
         axisLabel: {
-          interval: getAxisLabelInterval(
-            pointCount,
-          ),
+          interval: getAxisLabelInterval(pointCount),
           hideOverlap: true,
           rotate: 0,
           margin: 14,
@@ -192,9 +179,7 @@ export function DailyTrendChart({
           symbolSize: 7,
           sampling: "lttb",
 
-          data: statistics.daily.map(
-            (item) => item.total_jobs,
-          ),
+          data: statistics.daily.map((item) => item.total_jobs),
 
           emphasis: {
             focus: "series",
@@ -208,9 +193,7 @@ export function DailyTrendChart({
           symbolSize: 7,
           sampling: "lttb",
 
-          data: statistics.daily.map(
-            (item) => item.detected_objects,
-          ),
+          data: statistics.daily.map((item) => item.detected_objects),
 
           emphasis: {
             focus: "series",
@@ -220,12 +203,7 @@ export function DailyTrendChart({
     };
   }, [statistics]);
 
-  return (
-    <EChart
-      option={option}
-      className="h-95 sm:h-105"
-    />
-  );
+  return <EChart option={option} className="h-95 sm:h-105" />;
 }
 
 export function SourceDistributionChart({ statistics }: AnalyticsChartsProps) {

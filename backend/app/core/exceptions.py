@@ -36,3 +36,11 @@ class InvalidVideoError(ApplicationError):
 
 class VideoTooLongError(ApplicationError):
     """Raised when an uploaded video exceeds the duration limit."""
+
+
+class InvalidCameraFrameError(ApplicationError):
+    """Raised when a camera frame cannot be decoded safely."""
+
+
+class CameraSessionUnavailableError(ApplicationError):
+    """Raised when a camera session cannot be opened."""

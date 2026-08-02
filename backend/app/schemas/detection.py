@@ -16,9 +16,16 @@ class BoundingBoxResponse(BaseModel):
 
 
 class DetectionObjectResponse(BaseModel):
+    frame_index: int = Field(
+        ge=0,
+    )
+
+    track_id: int | None
+
     class_id: int
     class_name: str
     confidence: float
+
     bounding_box: BoundingBoxResponse
 
 

@@ -35,3 +35,14 @@ backend/results/*
 
 # IDE
 .vscode/settings.json
+
+# Backend tests
+backend/.test-data/
+backend/coverage.xml
+backend/htmlcov/
+.coverage
+
+# Frontend tests
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/

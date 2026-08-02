@@ -1,7 +1,6 @@
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
-from threading import Lock
 from time import perf_counter
 from typing import Any
 
@@ -13,6 +12,7 @@ from app.services.detection_types import (
     DetectedObjectData,
     DetectionRunResult,
 )
+from app.services.inference_lock import MODEL_INFERENCE_LOCK
 
 TARGET_CLASS_NAMES = {
     "person",
@@ -35,7 +35,6 @@ class ObjectDetector:
         self.model_name = model_name
         self.device = self._select_device(requested_device)
         self._model = YOLO(model_name)
-        self._prediction_lock = Lock()
         self._target_class_ids = self._resolve_target_class_ids()
 
     def detect_image(
@@ -47,7 +46,7 @@ class ObjectDetector:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         started_at = perf_counter()
 
-        with self._prediction_lock:
+        with MODEL_INFERENCE_LOCK:
             results = self._model.predict(
                 source=str(input_path),
                 device=self.device,

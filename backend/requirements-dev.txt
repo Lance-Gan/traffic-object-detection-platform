@@ -1,6 +1,8 @@
 -r requirements.txt
 
+httpx
 mypy
+pip-audit
 pytest
 pytest-cov
 ruff

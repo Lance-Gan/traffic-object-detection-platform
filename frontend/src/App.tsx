@@ -6,6 +6,8 @@ import { DetectionWorkspacePage } from "./pages/detection-workspace-page";
 import { HistoryPage } from "./pages/history-page";
 import { NotFoundPage } from "./pages/not-found-page";
 import { SystemStatusPage } from "./pages/system-status-page";
+import { CameraDetectionPage } from "./pages/camera-detection-page";
+import { VideoDetectionPage } from "./pages/video-detection-page";
 
 export default function App() {
   return (
@@ -20,6 +22,10 @@ export default function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
 
         <Route path="/system" element={<SystemStatusPage />} />
+
+        <Route path="/video" element={<VideoDetectionPage />} />
+
+        <Route path="/camera" element={<CameraDetectionPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

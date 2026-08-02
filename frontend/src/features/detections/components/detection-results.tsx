@@ -20,6 +20,7 @@ function MetricCard({ label, value, icon: Icon }: MetricCardProps) {
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center gap-2 text-slate-500">
         <Icon aria-hidden="true" className="size-4" />
+
         <span className="text-xs font-semibold tracking-wide uppercase">{label}</span>
       </div>
 
@@ -29,9 +30,11 @@ function MetricCard({ label, value, icon: Icon }: MetricCardProps) {
 }
 
 export function DetectionResults({ result, localPreviewUrl }: DetectionResultsProps) {
-  const displayedImage = result?.result_url ?? localPreviewUrl;
+  const displayedMediaUrl = result?.result_url ?? localPreviewUrl;
 
-  if (!displayedImage) {
+  const isVideoResult = result?.source_type === "video" && result.result_url !== null;
+
+  if (!displayedMediaUrl) {
     return (
       <Card className="h-full">
         <CardContent className="flex min-h-96 flex-col items-center justify-center text-center">
@@ -42,8 +45,8 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
           <h2 className="mt-5 text-lg font-bold text-slate-950">Detection result</h2>
 
           <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-            Select an image and start detection. The annotated result and detected objects will
-            appear here.
+            Select an image or video and start detection. The processed result and detected objects
+            will appear here.
           </p>
         </CardContent>
       </Card>
@@ -57,7 +60,7 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-slate-950">
-                {result ? "Annotated detection result" : "Image preview"}
+                {result ? "Detection result" : "Image preview"}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
@@ -77,15 +80,26 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
 
         <CardContent>
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
-            <img
-              src={displayedImage}
-              alt={
-                result
-                  ? `Detection result for ${result.original_filename}`
-                  : "Selected image preview"
-              }
-              className="mx-auto max-h-170 w-full object-contain"
-            />
+            {isVideoResult ? (
+              <video
+                src={displayedMediaUrl}
+                controls
+                preload="metadata"
+                className="max-h-155 w-full rounded-xl bg-black"
+              >
+                Your browser does not support video playback.
+              </video>
+            ) : (
+              <img
+                src={displayedMediaUrl}
+                alt={
+                  result
+                    ? `Detection result for ${result.original_filename}`
+                    : "Selected image preview"
+                }
+                className="mx-auto max-h-155 w-full object-contain"
+              />
+            )}
           </div>
         </CardContent>
       </Card>
@@ -146,7 +160,7 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
                   <h2 className="text-lg font-bold text-slate-950">Detected objects</h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Confidence scores and bounding-box coordinates
+                    Frame numbers, tracking IDs, confidence scores and bounding-box coordinates
                   </p>
                 </div>
               </div>
@@ -156,15 +170,23 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
               <table className="min-w-full divide-y divide-slate-200 text-left">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-5 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
+                    <th className="px-5 py-3 text-xs font-bold tracking-wide whitespace-nowrap text-slate-500 uppercase">
+                      Frame
+                    </th>
+
+                    <th className="px-5 py-3 text-xs font-bold tracking-wide whitespace-nowrap text-slate-500 uppercase">
+                      Track ID
+                    </th>
+
+                    <th className="px-5 py-3 text-xs font-bold tracking-wide whitespace-nowrap text-slate-500 uppercase">
                       Class
                     </th>
 
-                    <th className="px-5 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
+                    <th className="px-5 py-3 text-xs font-bold tracking-wide whitespace-nowrap text-slate-500 uppercase">
                       Confidence
                     </th>
 
-                    <th className="px-5 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
+                    <th className="px-5 py-3 text-xs font-bold tracking-wide whitespace-nowrap text-slate-500 uppercase">
                       Bounding box
                     </th>
                   </tr>
@@ -174,8 +196,23 @@ export function DetectionResults({ result, localPreviewUrl }: DetectionResultsPr
                   {result.objects.map((detectedObject, index) => {
                     const box = detectedObject.bounding_box;
 
+                    const rowKey = [
+                      detectedObject.frame_index,
+                      detectedObject.track_id ?? "untracked",
+                      detectedObject.class_name,
+                      index,
+                    ].join("-");
+
                     return (
-                      <tr key={`${detectedObject.class_name}-${index}`}>
+                      <tr key={rowKey}>
+                        <td className="px-5 py-4 text-sm whitespace-nowrap text-slate-700">
+                          {detectedObject.frame_index}
+                        </td>
+
+                        <td className="px-5 py-4 text-sm whitespace-nowrap text-slate-700">
+                          {detectedObject.track_id ?? "Not tracked"}
+                        </td>
+
                         <td className="px-5 py-4 text-sm font-semibold whitespace-nowrap text-slate-900">
                           {detectedObject.class_name}
                         </td>

@@ -8,6 +8,14 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(25 * 1024 * 1024),
+
+  VITE_MAX_VIDEO_UPLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(250 * 1024 * 1024),
+
+  VITE_MAX_VIDEO_DURATION_SECONDS: z.coerce.number().int().positive().default(120),
 });
 
 const parsedEnvironment = envSchema.safeParse(import.meta.env);

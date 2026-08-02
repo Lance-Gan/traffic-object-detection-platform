@@ -51,6 +51,8 @@ def build_job_detail(
 
     objects = [
         DetectionObjectResponse(
+            frame_index=(detected_object.frame_index),
+            track_id=(detected_object.track_id),
             class_id=detected_object.class_id,
             class_name=detected_object.class_name,
             confidence=float(detected_object.confidence),

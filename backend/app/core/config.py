@@ -45,6 +45,32 @@ class Settings(BaseSettings):
     max_video_duration_seconds: int = 120
     video_target_fps: int = 10
 
+    video_tracker_name: str = "bytetrack.yaml"
+    video_inference_size: int = 640
+    video_output_max_width: int = 1280
+
+    camera_target_fps: int = 5
+    camera_frame_width: int = 640
+    camera_jpeg_quality: float = 0.72
+
+    camera_max_frame_bytes: int = 2 * 1024 * 1024
+    camera_max_frame_pixels: int = 1280 * 720
+    camera_max_session_seconds: int = 10 * 60
+
+    camera_tracker_name: str = "bytetrack.yaml"
+
+    log_level: str = "INFO"
+
+    allowed_hosts: list[str] = [
+        "127.0.0.1",
+        "localhost",
+        "testserver",
+    ]
+
+    max_request_body_bytes: int = (
+        270 * 1024 * 1024
+    )
+
     video_upload_dir: Path = BACKEND_ROOT / "uploads" / "videos"
 
     video_result_dir: Path = BACKEND_ROOT / "results" / "videos"

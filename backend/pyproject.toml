@@ -38,3 +38,34 @@ module = [
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+addopts = [
+    "-ra",
+    "--strict-config",
+    "--strict-markers",
+]
+markers = [
+    "integration: tests requiring the MySQL test database",
+    "websocket: tests covering WebSocket behaviour",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "app",
+]
+omit = [
+    "app/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+precision = 2
+
+[tool.coverage.xml]
+output = "coverage.xml"
