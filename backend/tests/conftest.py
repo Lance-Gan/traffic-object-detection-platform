@@ -10,10 +10,40 @@ from PIL import Image
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 TEST_DATA_ROOT = BACKEND_ROOT / ".test-data"
 
-UPLOAD_DIR = TEST_DATA_ROOT / "uploads"
-RESULT_DIR = TEST_DATA_ROOT / "results"
-VIDEO_UPLOAD_DIR = UPLOAD_DIR / "videos"
-VIDEO_RESULT_DIR = RESULT_DIR / "videos"
+DEFAULT_TEST_ENVIRONMENT = {
+    "APP_ENV": "test",
+    "LOG_LEVEL": "WARNING",
+    "SQL_ECHO": "false",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "3307",
+    "DB_NAME": "traffic_detection_test",
+    "DB_USER": "traffic_test",
+    "DB_PASSWORD": "traffic_test_password",
+    "CELERY_BROKER_URL": "redis://127.0.0.1:6380/0",
+    "CELERY_RESULT_BACKEND": "redis://127.0.0.1:6380/1",
+    "MODEL_NAME": "fake-yolo.pt",
+    "INFERENCE_DEVICE": "cpu",
+    "UPLOAD_DIR": str(TEST_DATA_ROOT / "uploads"),
+    "RESULT_DIR": str(TEST_DATA_ROOT / "results"),
+    "VIDEO_UPLOAD_DIR": str(TEST_DATA_ROOT / "uploads" / "videos"),
+    "VIDEO_RESULT_DIR": str(TEST_DATA_ROOT / "results" / "videos"),
+    "CORS_ORIGINS": ('["http://127.0.0.1:5173","http://localhost:5173"]'),
+    "ALLOWED_HOSTS": ('["127.0.0.1","localhost","testserver"]'),
+}
+
+if os.environ.get("CI", "").lower() == "true":
+    for variable_name, default_value in DEFAULT_TEST_ENVIRONMENT.items():
+        os.environ.setdefault(
+            variable_name,
+            default_value,
+        )
+else:
+    os.environ.update(DEFAULT_TEST_ENVIRONMENT)
+
+UPLOAD_DIR = Path(os.environ["UPLOAD_DIR"])
+RESULT_DIR = Path(os.environ["RESULT_DIR"])
+VIDEO_UPLOAD_DIR = Path(os.environ["VIDEO_UPLOAD_DIR"])
+VIDEO_RESULT_DIR = Path(os.environ["VIDEO_RESULT_DIR"])
 
 for directory in (
     UPLOAD_DIR,
@@ -25,30 +55,6 @@ for directory in (
         parents=True,
         exist_ok=True,
     )
-
-
-os.environ.update(
-    {
-        "APP_ENV": "test",
-        "LOG_LEVEL": "WARNING",
-        "SQL_ECHO": "false",
-        "DB_HOST": "127.0.0.1",
-        "DB_PORT": "3307",
-        "DB_NAME": "traffic_detection_test",
-        "DB_USER": "traffic_test",
-        "DB_PASSWORD": "traffic_test_password",
-        "CELERY_BROKER_URL": ("redis://127.0.0.1:6380/0"),
-        "CELERY_RESULT_BACKEND": ("redis://127.0.0.1:6380/1"),
-        "MODEL_NAME": "fake-yolo.pt",
-        "INFERENCE_DEVICE": "cpu",
-        "UPLOAD_DIR": str(UPLOAD_DIR),
-        "RESULT_DIR": str(RESULT_DIR),
-        "VIDEO_UPLOAD_DIR": str(VIDEO_UPLOAD_DIR),
-        "VIDEO_RESULT_DIR": str(VIDEO_RESULT_DIR),
-        "CORS_ORIGINS": ('["http://127.0.0.1:5173","http://localhost:5173"]'),
-        "ALLOWED_HOSTS": ('["127.0.0.1","localhost","testserver"]'),
-    }
-)
 
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -73,9 +79,7 @@ def client() -> Generator[TestClient]:
 def clean_database() -> None:
     with SessionLocal() as session:
         session.execute(delete(DetectionObject))
-
         session.execute(delete(DetectionJob))
-
         session.commit()
 
 
