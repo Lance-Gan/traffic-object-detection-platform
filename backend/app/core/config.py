@@ -13,9 +13,10 @@ ENV_FILE = PROJECT_ROOT / ".env"
 
 class Settings(BaseSettings):
     app_name: str = "Traffic Object Detection API"
-    app_version: str = "0.2.0"
+    app_version: str = "1.0.0"
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
+    enable_api_docs: bool = True
     sql_echo: bool = False
 
     cors_origins: list[str] = [

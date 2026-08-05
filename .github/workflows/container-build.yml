@@ -1,0 +1,57 @@
+name: Container Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-containers:
+    name: Validate Containers
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Validate backend Dockerfile
+        run: |
+          docker build \
+            --check \
+            --file backend/Dockerfile \
+            .
+
+      - name: Validate frontend Dockerfile
+        run: |
+          docker build \
+            --check \
+            --file frontend/Dockerfile \
+            frontend
+
+      - name: Validate production Compose
+        run: |
+          docker compose \
+            --env-file .env.production.example \
+            --file compose.production.yml \
+            config \
+            --quiet
+
+      - name: Build backend image
+        run: |
+          docker build \
+            --file backend/Dockerfile \
+            --tag traffic-detection-backend:test \
+            .
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            --file frontend/Dockerfile \
+            --tag traffic-detection-web:test \
+            frontend

@@ -49,7 +49,7 @@ mypy_extensions==1.1.0
 networkx==3.6.1
 numpy==2.5.1
 nvidia-ml-py==13.610.43
-opencv-python==5.0.0.93
+opencv-python-headless==5.0.0.93
 packageurl-python==0.17.6
 packaging==26.2
 pathspec==1.1.1
@@ -95,7 +95,7 @@ typing-inspection==0.4.2
 typing_extensions==4.16.0
 tzdata==2026.3
 tzlocal==5.4.4
-ultralytics==8.4.104
+ultralytics-opencv-headless==8.4.104
 ultralytics-thop==2.0.20
 urllib3==2.7.0
 uvicorn==0.51.0

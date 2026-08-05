@@ -3,6 +3,8 @@
 
 # Secrets
 .env
+.env.production
+.env.*.local
 
 # Python
 backend/.venv/
@@ -46,3 +48,14 @@ backend/htmlcov/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+
+# Local model weights
+models/*
+!models/.gitkeep
+
+backups/
+
+# Local demo source recordings
+docs/demo-source.*
+docs/video-detection-source.*
+docs/live-camera-detection-source.*

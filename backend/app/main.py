@@ -37,10 +37,17 @@ def create_application() -> FastAPI:
         exist_ok=True,
     )
 
+    docs_url = f"{settings.api_v1_prefix}/docs" if settings.enable_api_docs else None
+
+    openapi_url = f"{settings.api_v1_prefix}/openapi.json" if settings.enable_api_docs else None
+
     application = FastAPI(
         title=settings.app_name,
-        description=("API for traffic object detection and analytics"),
+        description="API for traffic object detection and analytics",
         version=settings.app_version,
+        docs_url=docs_url,
+        openapi_url=openapi_url,
+        redoc_url=None,
     )
 
     application.add_middleware(

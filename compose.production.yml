@@ -1,0 +1,382 @@
+name: traffic-detection-production
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend-environment: &backend-environment
+  APP_ENV: production
+  APP_VERSION: ${APP_VERSION:-1.0.0}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  SQL_ECHO: "false"
+
+  ENABLE_API_DOCS: ${ENABLE_API_DOCS:-true}
+
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_NAME: ${MYSQL_DATABASE}
+  DB_USER: ${MYSQL_USER}
+  DB_PASSWORD: ${MYSQL_PASSWORD}
+
+  MODEL_NAME: ${MODEL_FILE_NAME:-yolo26n.pt}
+  INFERENCE_DEVICE: cpu
+
+  DEFAULT_CONFIDENCE_THRESHOLD: ${DEFAULT_CONFIDENCE_THRESHOLD:-0.2500}
+
+  MAX_IMAGE_UPLOAD_BYTES: ${MAX_IMAGE_UPLOAD_BYTES:-26214400}
+
+  MAX_VIDEO_UPLOAD_BYTES: ${MAX_VIDEO_UPLOAD_BYTES:-262144000}
+  MAX_VIDEO_DURATION_SECONDS: ${MAX_VIDEO_DURATION_SECONDS:-120}
+  VIDEO_TARGET_FPS: ${VIDEO_TARGET_FPS:-10}
+  VIDEO_TRACKER_NAME: ${VIDEO_TRACKER_NAME:-bytetrack.yaml}
+  VIDEO_INFERENCE_SIZE: ${VIDEO_INFERENCE_SIZE:-640}
+  VIDEO_OUTPUT_MAX_WIDTH: ${VIDEO_OUTPUT_MAX_WIDTH:-1280}
+
+  CAMERA_TARGET_FPS: ${CAMERA_TARGET_FPS:-5}
+  CAMERA_FRAME_WIDTH: ${CAMERA_FRAME_WIDTH:-640}
+  CAMERA_JPEG_QUALITY: ${CAMERA_JPEG_QUALITY:-0.72}
+  CAMERA_MAX_FRAME_BYTES: ${CAMERA_MAX_FRAME_BYTES:-2097152}
+  CAMERA_MAX_FRAME_PIXELS: ${CAMERA_MAX_FRAME_PIXELS:-921600}
+  CAMERA_MAX_SESSION_SECONDS: ${CAMERA_MAX_SESSION_SECONDS:-600}
+  CAMERA_TRACKER_NAME: ${CAMERA_TRACKER_NAME:-bytetrack.yaml}
+
+  UPLOAD_DIR: /data/uploads
+  RESULT_DIR: /data/results
+
+  VIDEO_UPLOAD_DIR: /data/uploads/videos
+  VIDEO_RESULT_DIR: /data/results/videos
+
+  RESULT_URL_PREFIX: /media/results
+
+  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/1
+
+  MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-283115520}
+
+  CORS_ORIGINS: ${CORS_ORIGINS}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+
+  TZ: UTC
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: UTC
+
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    networks:
+      - data_network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+    logging: *default-logging
+
+  redis:
+    image: redis:8.4-alpine
+    restart: unless-stopped
+
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    command:
+      - sh
+      - -c
+      - >
+        exec redis-server
+        --appendonly yes
+        --requirepass "$${REDIS_PASSWORD}"
+
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - data_network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+    logging: *default-logging
+
+  storage-init:
+    image: traffic-detection-backend:1.0.0
+
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+
+    user: "0:0"
+
+    command:
+      - sh
+      - -c
+      - >
+        mkdir -p
+        /data/uploads/videos
+        /data/results/videos
+        &&
+        chown -R
+        10001:10001
+        /data/uploads
+        /data/results
+        &&
+        chmod -R
+        u+rwX,go+rX
+        /data/uploads
+        /data/results
+
+    volumes:
+      - uploads_data:/data/uploads
+      - results_data:/data/results
+
+    networks:
+      - data_network
+
+    restart: "no"
+
+    logging: *default-logging
+
+  migrate:
+    image: traffic-detection-backend:1.0.0
+
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+
+    environment:
+      <<: *backend-environment
+
+    command:
+      - alembic
+      - upgrade
+      - head
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    networks:
+      - data_network
+
+    restart: "no"
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    logging: *default-logging
+
+  backend:
+    image: traffic-detection-backend:1.0.0
+
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      <<: *backend-environment
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+      storage-init:
+        condition: service_completed_successfully
+
+      migrate:
+        condition: service_completed_successfully
+
+    volumes:
+      - uploads_data:/data/uploads
+      - results_data:/data/results
+
+      - ./models/${MODEL_FILE_NAME:-yolo26n.pt}:/workspace/backend/${MODEL_FILE_NAME:-yolo26n.pt}:ro
+
+    expose:
+      - "8000"
+
+    networks:
+      - application_network
+      - data_network
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/system', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    pids_limit: 512
+
+    logging: *default-logging
+
+  worker:
+    image: traffic-detection-backend:1.0.0
+
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      <<: *backend-environment
+
+    command:
+      - celery
+      - -A
+      - app.worker.celery_app:celery_app
+      - worker
+      - --loglevel=INFO
+      - --pool=solo
+      - --queues=video
+      - --hostname=video@%h
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+      storage-init:
+        condition: service_completed_successfully
+
+      migrate:
+        condition: service_completed_successfully
+
+    volumes:
+      - uploads_data:/data/uploads
+      - results_data:/data/results
+
+      - ./models/${MODEL_FILE_NAME:-yolo26n.pt}:/workspace/backend/${MODEL_FILE_NAME:-yolo26n.pt}:ro
+
+    networks:
+      - data_network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A app.worker.celery_app:celery_app inspect ping --destination \"video@$$HOSTNAME\" --timeout=10 | grep -q pong",
+        ]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    pids_limit: 512
+
+    logging: *default-logging
+
+  web:
+    image: traffic-detection-web:1.0.0
+
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_MAX_IMAGE_UPLOAD_BYTES: ${MAX_IMAGE_UPLOAD_BYTES:-26214400}
+        VITE_MAX_VIDEO_UPLOAD_BYTES: ${MAX_VIDEO_UPLOAD_BYTES:-262144000}
+        VITE_MAX_VIDEO_DURATION_SECONDS: ${MAX_VIDEO_DURATION_SECONDS:-120}
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    volumes:
+      - results_data:/srv/media:ro
+
+    networks:
+      - application_network
+
+    read_only: true
+
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    pids_limit: 256
+
+    logging: *default-logging
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:
+  results_data:
+
+networks:
+  application_network:
+
+  data_network:
+    internal: true
