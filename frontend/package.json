@@ -26,7 +26,7 @@
     "axios": "^1.18.1",
     "clsx": "^2.1.1",
     "echarts": "^6.1.0",
-    "lucide-react": "^1.26.0",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-dropzone": "^19.1.1",
